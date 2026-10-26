@@ -207,5 +207,3 @@ tests/
 - Banco de dados com índice único parcial (`automovel_id WHERE data_fim IS NULL`) para garantir a regra de uso
   exclusivo mesmo com várias instâncias da API.
 - Paginação nas listagens.
-- Autenticação e autorização.
-- Logs estruturados e métricas.
