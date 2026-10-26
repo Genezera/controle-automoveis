@@ -24,14 +24,20 @@ function optionalFilter(value) {
 /** Converte um texto ISO 8601 com fuso em Date, rejeitando datas inexistentes. */
 function parseDate(value, field) {
   const match = typeof value === 'string' ? ISO_8601_COM_FUSO.exec(value) : null;
+  const date = new Date(value);
 
-  // `new Date` "corrige" dias inexistentes (30/02 vira 01/03), por isso o dia é conferido à parte.
-  if (!match || !isDiaExistente(Number(match[1]), Number(match[2]), Number(match[3]))) {
+  // Fusos inexistentes (ex.: +99:99) geram uma data inválida, e `new Date` "corrige" dias
+  // inexistentes (30/02 vira 01/03) em vez de rejeitá-los; por isso os dois são conferidos.
+  if (
+    !match ||
+    Number.isNaN(date.getTime()) ||
+    !isDiaExistente(Number(match[1]), Number(match[2]), Number(match[3]))
+  ) {
     throw new ValidationError(
       `O campo "${field}" deve ser uma data ISO 8601 com fuso horário (ex.: 2024-05-10T08:00:00Z)`,
     );
   }
-  return new Date(value);
+  return date;
 }
 
 function isDiaExistente(ano, mes, dia) {

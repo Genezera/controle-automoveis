@@ -41,6 +41,8 @@ describe('validators', () => {
       ['dia inexistente', '2024-02-30T08:00:00Z'],
       ['29/02 em ano não bissexto', '2023-02-29T08:00:00Z'],
       ['hora inexistente', '2024-05-10T24:00:00Z'],
+      ['fuso inexistente', '2024-05-10T08:00:00+99:99'],
+      ['fuso de 24 horas', '2024-05-10T08:00:00+24:00'],
       ['número', 1715328000000],
       ['nulo', null],
     ])('rejeita %s', (_, valor) => {
