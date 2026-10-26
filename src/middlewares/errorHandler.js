@@ -1,5 +1,10 @@
 const { AppError } = require('../errors');
 
+const MENSAGENS_DO_BODY_PARSER = {
+  'entity.parse.failed': 'Corpo da requisição não é um JSON válido',
+  'entity.too.large': 'Corpo da requisição excede o tamanho máximo de 100 KB',
+};
+
 /** Rota não encontrada. */
 function notFoundHandler(req, res) {
   res.status(404).json({ erro: `Rota ${req.method} ${req.originalUrl} não encontrada` });
@@ -14,9 +19,11 @@ function errorHandler(err, req, res, _next) {
     return res.status(err.statusCode).json({ erro: err.message });
   }
 
-  // JSON malformado enviado pelo cliente (body-parser)
-  if (err.type === 'entity.parse.failed') {
-    return res.status(400).json({ erro: 'Corpo da requisição não é um JSON válido' });
+  // Erros do body-parser (JSON malformado, corpo grande demais etc.) são do cliente e já
+  // trazem o status 4xx; responder 500 atribuiria ao servidor um erro de quem fez a requisição.
+  if (err.status >= 400 && err.status < 500) {
+    const erro = MENSAGENS_DO_BODY_PARSER[err.type] ?? 'Requisição inválida';
+    return res.status(err.status).json({ erro });
   }
 
   console.error(err);

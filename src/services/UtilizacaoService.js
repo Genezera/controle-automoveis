@@ -53,11 +53,11 @@ class UtilizacaoService {
       this.utilizacaoRepository.findByMotorista(motoristaId),
     ]);
     this.#assertSemSobreposicao(usosDoAutomovel, dataInicio, {
-      emAndamento: 'O automóvel já está sendo utilizado por outro motorista',
+      emAndamento: 'O automóvel já está em uso',
       sobreposto: 'O automóvel possui uma utilização que termina após a data de início informada',
     });
     this.#assertSemSobreposicao(usosDoMotorista, dataInicio, {
-      emAndamento: 'O motorista já está utilizando outro automóvel',
+      emAndamento: 'O motorista já está utilizando um automóvel',
       sobreposto: 'O motorista possui uma utilização que termina após a data de início informada',
     });
 

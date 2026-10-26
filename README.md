@@ -140,6 +140,7 @@ Todos os erros seguem o formato `{ "erro": "mensagem" }`:
 | `400`  | Dados inválidos: campo ausente, placa ou data em formato inválido, JSON malformado                   |
 | `404`  | Recurso ou rota inexistente                                                                          |
 | `409`  | Violação de regra de negócio: placa duplicada, automóvel ou motorista em uso, exclusão com histórico |
+| `413`  | Corpo da requisição maior que 100 KB                                                                 |
 | `500`  | Erro inesperado (detalhes apenas no log do servidor)                                                 |
 
 ### Exemplo rápido (curl)
@@ -167,7 +168,7 @@ curl "localhost:3000/automoveis?cor=preto&marca=fiat"
 - **Placa** normalizada (maiúsculas, sem hífen/espaços), validada nos formatos `ABC1234` e `ABC1D23` (Mercosul)
   e **única**.
 - **Filtros:** `cor` e `marca` comparam por igualdade e `nome` por "contém". Todos ignoram maiúsculas, minúsculas e
-  acentos.
+  acentos, e um filtro vazio (ex.: `?cor=`) é tratado como ausente.
 - **Exclusão com histórico.** Automóveis e motoristas com utilizações registradas não podem ser excluídos
   (`409`), como uma chave estrangeira com `ON DELETE RESTRICT`. Assim a listagem de utilizações nunca aponta para
   um registro inexistente.

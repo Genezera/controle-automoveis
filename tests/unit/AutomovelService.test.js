@@ -156,5 +156,9 @@ describe('AutomovelService', () => {
     it('retorna lista vazia quando nada corresponde', async () => {
       await expect(service.list({ cor: 'Verde' })).resolves.toEqual([]);
     });
+
+    it('trata filtros vazios como ausentes', async () => {
+      await expect(service.list({ cor: '', marca: '   ' })).resolves.toHaveLength(3);
+    });
   });
 });

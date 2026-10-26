@@ -1,5 +1,5 @@
 const { NotFoundError, ConflictError } = require('../errors');
-const { requireText } = require('../validators');
+const { requireText, optionalFilter } = require('../validators');
 
 class MotoristaService {
   constructor({ motoristaRepository, utilizacaoRepository }) {
@@ -37,8 +37,9 @@ class MotoristaService {
 
   /** Lista motoristas, filtrando opcionalmente pelos que têm o termo no nome. */
   async list({ nome } = {}) {
-    if (nome === undefined) return this.motoristaRepository.findAll();
-    return this.motoristaRepository.findByNomeContendo(nome);
+    const termo = optionalFilter(nome);
+    if (termo === undefined) return this.motoristaRepository.findAll();
+    return this.motoristaRepository.findByNomeContendo(termo);
   }
 }
 

@@ -110,5 +110,9 @@ describe('MotoristaService', () => {
     it('retorna lista vazia quando nada corresponde', async () => {
       await expect(service.list({ nome: 'zzz' })).resolves.toEqual([]);
     });
+
+    it('trata filtro vazio como ausente', async () => {
+      await expect(service.list({ nome: '   ' })).resolves.toHaveLength(3);
+    });
   });
 });

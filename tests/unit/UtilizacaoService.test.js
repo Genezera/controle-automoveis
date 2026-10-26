@@ -90,6 +90,15 @@ describe('UtilizacaoService', () => {
       });
     });
 
+    it('impede que o motorista inicie de novo o automóvel que já está usando', async () => {
+      await iniciar(ana, carro1);
+
+      await expect(iniciar(ana, carro1)).rejects.toMatchObject({
+        statusCode: 409,
+        message: 'O automóvel já está em uso',
+      });
+    });
+
     it('impede que um motorista em uso utilize outro automóvel', async () => {
       await iniciar(ana, carro1);
 

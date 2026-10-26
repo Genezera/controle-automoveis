@@ -1,4 +1,4 @@
-const { requireText, parseDate, normalizeText } = require('../../src/validators');
+const { requireText, optionalFilter, parseDate, normalizeText } = require('../../src/validators');
 
 describe('validators', () => {
   describe('requireText', () => {
@@ -10,6 +10,16 @@ describe('validators', () => {
       expect(() => requireText(valor, 'marca')).toThrow(
         expect.objectContaining({ statusCode: 400, message: expect.stringContaining('"marca"') }),
       );
+    });
+  });
+
+  describe('optionalFilter', () => {
+    it('devolve o filtro sem espaços nas pontas', () => {
+      expect(optionalFilter('  Preto ')).toBe('Preto');
+    });
+
+    it.each([undefined, '', '   ', ['a', 'b']])('trata %p como sem filtro', (valor) => {
+      expect(optionalFilter(valor)).toBeUndefined();
     });
   });
 

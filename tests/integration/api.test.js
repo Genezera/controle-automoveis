@@ -56,6 +56,9 @@ describe('API', () => {
       expect(porCor.body).toHaveLength(2);
       expect(porMarca.body).toHaveLength(2);
       expect(ambos.body.map((a) => a.placa)).toEqual(['AAA1A11']);
+
+      const filtrosVazios = await request(app).get('/automoveis?cor=&marca=');
+      expect(filtrosVazios.body).toHaveLength(3);
     });
 
     it('responde 400 com dados inválidos e 409 para placa duplicada', async () => {
@@ -196,6 +199,15 @@ describe('API', () => {
         .send('{ invalido');
 
       expect(resposta.status).toBe(400);
+    });
+
+    it('responde 413 (e não 500) para corpo maior que o limite', async () => {
+      const resposta = await request(app)
+        .post('/motoristas')
+        .send({ nome: 'x'.repeat(200 * 1024) });
+
+      expect(resposta.status).toBe(413);
+      expect(resposta.body.erro).toMatch(/tamanho máximo/);
     });
   });
 });

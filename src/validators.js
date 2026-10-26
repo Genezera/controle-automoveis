@@ -16,6 +16,11 @@ function requireText(value, field) {
   return value.trim();
 }
 
+/** Filtro opcional de listagem: ausente, vazio ou só com espaços equivale a "sem filtro". */
+function optionalFilter(value) {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : undefined;
+}
+
 /** Converte um texto ISO 8601 com fuso em Date, rejeitando datas inexistentes. */
 function parseDate(value, field) {
   const match = typeof value === 'string' ? ISO_8601_COM_FUSO.exec(value) : null;
@@ -42,4 +47,4 @@ function normalizeText(value) {
     .toLowerCase();
 }
 
-module.exports = { requireText, parseDate, normalizeText };
+module.exports = { requireText, optionalFilter, parseDate, normalizeText };
