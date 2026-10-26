@@ -99,7 +99,7 @@ describe('MotoristaService', () => {
       await expect(service.list()).resolves.toHaveLength(3);
     });
 
-    it('filtra por parte do nome, ignorando caixa', async () => {
+    it('filtra por parte do nome, sem diferenciar maiúsculas de minúsculas', async () => {
       expect(nomes(await service.list({ nome: 'jo' }))).toEqual(['João Silva', 'Joana Souza']);
     });
 
