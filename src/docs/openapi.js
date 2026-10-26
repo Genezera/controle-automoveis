@@ -3,7 +3,7 @@
  */
 
 const ref = (schema) => ({ $ref: `#/components/schemas/${schema}` });
-const json = (schema) => ({ content: { 'application/json': { schema } } });
+const json = (schema, example) => ({ content: { 'application/json': { schema, example } } });
 const resposta = (description, schema) => ({ description, ...(schema && json(schema)) });
 
 const erro = (description) => resposta(description, ref('Erro'));
@@ -145,7 +145,16 @@ module.exports = {
       post: {
         tags: ['Utilizações'],
         summary: 'Inicia a utilização de um automóvel por um motorista',
-        requestBody: { required: true, ...json(ref('UtilizacaoInput')) },
+        // Exemplo sem dataInicio: assim o "Try it out" usa o horário atual, e iniciar,
+        // finalizar e iniciar de novo com os exemplos não gera sobreposição de períodos.
+        requestBody: {
+          required: true,
+          ...json(ref('UtilizacaoInput'), {
+            motoristaId: 'cole-aqui-o-id-do-motorista',
+            automovelId: 'cole-aqui-o-id-do-automovel',
+            motivo: 'Visita ao cliente',
+          }),
+        },
         responses: {
           201: resposta('Utilização iniciada', ref('Utilizacao')),
           400: erro('Dados inválidos'),
@@ -159,7 +168,7 @@ module.exports = {
       patch: {
         tags: ['Utilizações'],
         summary: 'Finaliza uma utilização em andamento',
-        requestBody: { required: false, ...json(ref('FinalizacaoInput')) },
+        requestBody: { required: false, ...json(ref('FinalizacaoInput'), {}) },
         responses: {
           200: resposta('Utilização finalizada', ref('Utilizacao')),
           400: erro('Data de término inválida ou anterior ao início'),
