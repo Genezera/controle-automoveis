@@ -5,11 +5,13 @@ function notFoundHandler(req, res) {
   res.status(404).json({ erro: `Rota ${req.method} ${req.originalUrl} não encontrada` });
 }
 
-/** Traduz erros em respostas JSON; erros inesperados viram 500 sem vazar detalhes. */
-// eslint-disable-next-line no-unused-vars
-function errorHandler(err, req, res, next) {
+/**
+ * Traduz erros em respostas JSON; erros inesperados viram 500 sem vazar detalhes.
+ * O Express só reconhece um handler de erros pelos 4 parâmetros, por isso `_next` existe.
+ */
+function errorHandler(err, req, res, _next) {
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ erro: err.message, detalhes: err.details });
+    return res.status(err.statusCode).json({ erro: err.message });
   }
 
   // JSON malformado enviado pelo cliente (body-parser)

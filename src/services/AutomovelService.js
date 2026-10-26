@@ -10,37 +10,42 @@ class AutomovelService {
     this.utilizacaoRepository = utilizacaoRepository;
   }
 
-  create(input) {
+  async create(input) {
     const data = this.#parse(input);
-    this.#assertPlacaDisponivel(data.placa);
+    await this.#assertPlacaDisponivel(data.placa);
     return this.automovelRepository.create(data);
   }
 
   /** Substitui todos os dados do automóvel (semântica de PUT): todos os campos são obrigatórios. */
-  update(id, input) {
-    this.getById(id);
+  async update(id, input) {
+    await this.getById(id);
     const data = this.#parse(input);
-    this.#assertPlacaDisponivel(data.placa, id);
+    await this.#assertPlacaDisponivel(data.placa, id);
     return this.automovelRepository.update(id, data);
   }
 
-  remove(id) {
-    this.getById(id);
-    // Preserva o histórico: um automóvel com utilizações registradas não pode ser removido.
-    if (this.utilizacaoRepository.existsByAutomovel(id)) {
+  /**
+   * Exclui o automóvel. Um automóvel com utilizações registradas não pode ser excluído,
+   * para que o histórico de utilizações nunca aponte para um automóvel inexistente
+   * (equivalente a uma chave estrangeira com ON DELETE RESTRICT).
+   */
+  async remove(id) {
+    await this.getById(id);
+    const utilizacoes = await this.utilizacaoRepository.findByAutomovel(id);
+    if (utilizacoes.length > 0) {
       throw new ConflictError('Automóvel possui utilizações registradas e não pode ser excluído');
     }
-    this.automovelRepository.delete(id);
+    await this.automovelRepository.delete(id);
   }
 
-  getById(id) {
-    const automovel = this.automovelRepository.findById(id);
-    if (!automovel) throw new NotFoundError('Automóvel');
+  async getById(id) {
+    const automovel = await this.automovelRepository.findById(id);
+    if (!automovel) throw new NotFoundError('Automóvel não encontrado');
     return automovel;
   }
 
-  /** Lista automóveis, filtrando opcionalmente por cor e/ou marca (igualdade, sem distinção de caixa). */
-  list({ cor, marca } = {}) {
+  /** Lista automóveis, filtrando opcionalmente por cor e/ou marca (igualdade, sem distinção de caixa ou acento). */
+  async list({ cor, marca } = {}) {
     const matches = (value, filter) =>
       filter === undefined || normalizeText(value) === normalizeText(filter);
 
@@ -67,8 +72,8 @@ class AutomovelService {
   }
 
   /** `idIgnorado` permite que o automóvel em atualização mantenha a própria placa. */
-  #assertPlacaDisponivel(placa, idIgnorado) {
-    const existente = this.automovelRepository.findByPlaca(placa);
+  async #assertPlacaDisponivel(placa, idIgnorado) {
+    const existente = await this.automovelRepository.findByPlaca(placa);
     if (existente && existente.id !== idIgnorado) {
       throw new ConflictError(`Já existe um automóvel cadastrado com a placa ${placa}`);
     }

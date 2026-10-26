@@ -7,32 +7,36 @@ class MotoristaService {
     this.utilizacaoRepository = utilizacaoRepository;
   }
 
-  create(input = {}) {
+  async create(input = {}) {
     return this.motoristaRepository.create({ nome: requireText(input.nome, 'nome') });
   }
 
-  update(id, input = {}) {
-    this.getById(id);
+  async update(id, input = {}) {
+    await this.getById(id);
     return this.motoristaRepository.update(id, { nome: requireText(input.nome, 'nome') });
   }
 
-  remove(id) {
-    this.getById(id);
-    // Preserva o histórico: um motorista com utilizações registradas não pode ser removido.
-    if (this.utilizacaoRepository.existsByMotorista(id)) {
+  /**
+   * Exclui o motorista. Assim como no automóvel, quem tem utilizações registradas
+   * não pode ser excluído, para preservar a integridade do histórico.
+   */
+  async remove(id) {
+    await this.getById(id);
+    const utilizacoes = await this.utilizacaoRepository.findByMotorista(id);
+    if (utilizacoes.length > 0) {
       throw new ConflictError('Motorista possui utilizações registradas e não pode ser excluído');
     }
-    this.motoristaRepository.delete(id);
+    await this.motoristaRepository.delete(id);
   }
 
-  getById(id) {
-    const motorista = this.motoristaRepository.findById(id);
-    if (!motorista) throw new NotFoundError('Motorista');
+  async getById(id) {
+    const motorista = await this.motoristaRepository.findById(id);
+    if (!motorista) throw new NotFoundError('Motorista não encontrado');
     return motorista;
   }
 
-  /** Lista motoristas, filtrando opcionalmente por nome (contém, sem distinção de caixa e acentos). */
-  list({ nome } = {}) {
+  /** Lista motoristas, filtrando opcionalmente por nome (contém, sem distinção de caixa ou acento). */
+  async list({ nome } = {}) {
     if (nome === undefined) return this.motoristaRepository.findAll();
 
     const termo = normalizeText(nome);

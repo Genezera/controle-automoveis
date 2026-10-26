@@ -3,25 +3,24 @@
  * middleware de erros possa traduzi-los sem conhecer as regras de negócio.
  */
 class AppError extends Error {
-  constructor(message, statusCode, details) {
+  constructor(message, statusCode) {
     super(message);
     this.name = this.constructor.name;
     this.statusCode = statusCode;
-    this.details = details;
   }
 }
 
 /** Dados de entrada inválidos (400). */
 class ValidationError extends AppError {
-  constructor(message, details) {
-    super(message, 400, details);
+  constructor(message) {
+    super(message, 400);
   }
 }
 
 /** Recurso inexistente (404). */
 class NotFoundError extends AppError {
-  constructor(resource) {
-    super(`${resource} não encontrado(a)`, 404);
+  constructor(message) {
+    super(message, 404);
   }
 }
 

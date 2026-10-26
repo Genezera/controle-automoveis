@@ -4,24 +4,25 @@ const { Router } = require('express');
 module.exports = function motoristasRoutes(motoristaService) {
   const router = Router();
 
-  router.post('/', (req, res) => {
-    res.status(201).json(motoristaService.create(req.body));
+  router.post('/', async (req, res) => {
+    const motorista = await motoristaService.create(req.body);
+    res.status(201).location(`${req.baseUrl}/${motorista.id}`).json(motorista);
   });
 
-  router.get('/', (req, res) => {
-    res.json(motoristaService.list({ nome: req.query.nome }));
+  router.get('/', async (req, res) => {
+    res.json(await motoristaService.list({ nome: req.query.nome }));
   });
 
-  router.get('/:id', (req, res) => {
-    res.json(motoristaService.getById(req.params.id));
+  router.get('/:id', async (req, res) => {
+    res.json(await motoristaService.getById(req.params.id));
   });
 
-  router.put('/:id', (req, res) => {
-    res.json(motoristaService.update(req.params.id, req.body));
+  router.put('/:id', async (req, res) => {
+    res.json(await motoristaService.update(req.params.id, req.body));
   });
 
-  router.delete('/:id', (req, res) => {
-    motoristaService.remove(req.params.id);
+  router.delete('/:id', async (req, res) => {
+    await motoristaService.remove(req.params.id);
     res.status(204).end();
   });
 

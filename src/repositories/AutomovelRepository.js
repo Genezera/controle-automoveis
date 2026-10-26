@@ -1,8 +1,9 @@
 const InMemoryRepository = require('./InMemoryRepository');
 
 class AutomovelRepository extends InMemoryRepository {
-  findByPlaca(placa) {
-    return this.findAll((automovel) => automovel.placa === placa)[0] || null;
+  async findByPlaca(placa) {
+    const [automovel] = await this.findAll((a) => a.placa === placa);
+    return automovel ?? null;
   }
 }
 

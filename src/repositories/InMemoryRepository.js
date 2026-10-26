@@ -3,43 +3,44 @@ const { randomUUID } = require('crypto');
 /**
  * Repositório genérico com persistência em memória.
  *
- * Armazena e devolve cópias dos objetos, evitando que quem consome o
- * repositório altere o estado interno por referência.
+ * Os métodos são assíncronos de propósito: a interface é a mesma que um repositório
+ * com banco de dados teria, então trocar a persistência não exige mudar os serviços.
+ *
+ * Armazena e devolve cópias dos objetos, evitando que quem consome o repositório
+ * altere o estado interno por referência.
  */
 class InMemoryRepository {
-  constructor() {
-    this.items = new Map();
-  }
+  #items = new Map();
 
-  create(data) {
+  async create(data) {
     const entity = { id: randomUUID(), ...data };
-    this.items.set(entity.id, entity);
+    this.#items.set(entity.id, entity);
     return { ...entity };
   }
 
-  findById(id) {
-    const entity = this.items.get(id);
+  async findById(id) {
+    const entity = this.#items.get(id);
     return entity ? { ...entity } : null;
   }
 
   /** Retorna todos os registros, opcionalmente filtrados por um predicado. */
-  findAll(predicate = () => true) {
-    return [...this.items.values()].filter(predicate).map((entity) => ({ ...entity }));
+  async findAll(predicate = () => true) {
+    return [...this.#items.values()].filter(predicate).map((entity) => ({ ...entity }));
   }
 
   /** Mescla `data` no registro existente. Retorna null se o id não existir. */
-  update(id, data) {
-    const current = this.items.get(id);
+  async update(id, data) {
+    const current = this.#items.get(id);
     if (!current) return null;
 
     const updated = { ...current, ...data, id };
-    this.items.set(id, updated);
+    this.#items.set(id, updated);
     return { ...updated };
   }
 
   /** Retorna true se algum registro foi removido. */
-  delete(id) {
-    return this.items.delete(id);
+  async delete(id) {
+    return this.#items.delete(id);
   }
 }
 

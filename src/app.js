@@ -1,4 +1,5 @@
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
 
 const AutomovelRepository = require('./repositories/AutomovelRepository');
 const MotoristaRepository = require('./repositories/MotoristaRepository');
@@ -9,6 +10,7 @@ const UtilizacaoService = require('./services/UtilizacaoService');
 const automoveisRoutes = require('./routes/automoveis');
 const motoristasRoutes = require('./routes/motoristas');
 const utilizacoesRoutes = require('./routes/utilizacoes');
+const openapiSpec = require('./docs/openapi');
 const { notFoundHandler, errorHandler } = require('./middlewares/errorHandler');
 
 /**
@@ -30,8 +32,16 @@ function createApp({ now } = {}) {
   });
 
   const app = express();
+  app.disable('x-powered-by');
   app.use(express.json());
 
+  app.get('/', (req, res) => res.redirect('/docs'));
+  app.get('/health', (req, res) => res.json({ status: 'ok' }));
+  app.get('/openapi.json', (req, res) => res.json(openapiSpec));
+  app.use('/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
+
+  // No Express 5, exceções lançadas em handlers assíncronos chegam ao errorHandler
+  // automaticamente, por isso as rotas não precisam de try/catch.
   app.use('/automoveis', automoveisRoutes(automovelService));
   app.use('/motoristas', motoristasRoutes(motoristaService));
   app.use('/utilizacoes', utilizacoesRoutes(utilizacaoService));

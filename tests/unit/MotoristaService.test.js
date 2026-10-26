@@ -15,91 +15,100 @@ describe('MotoristaService', () => {
   });
 
   describe('create', () => {
-    it('cadastra um motorista e gera um identificador', () => {
-      const motorista = service.create({ nome: '  João Silva ' });
+    it('cadastra um motorista e gera um identificador', async () => {
+      const motorista = await service.create({ nome: '  João Silva ' });
 
       expect(motorista).toEqual({ id: expect.any(String), nome: 'João Silva' });
     });
 
-    it.each([undefined, '', '   ', 42])('rejeita nome inválido (%p)', (nome) => {
-      expect(() => service.create({ nome })).toThrow(expect.objectContaining({ statusCode: 400 }));
+    it.each([undefined, '', '   ', 42])('rejeita nome inválido (%p)', async (nome) => {
+      await expect(service.create({ nome })).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it('rejeita requisição sem corpo', async () => {
+      await expect(service.create(undefined)).rejects.toMatchObject({ statusCode: 400 });
     });
   });
 
   describe('getById', () => {
-    it('recupera um motorista pelo identificador', () => {
-      const criado = service.create({ nome: 'Maria' });
+    it('recupera um motorista pelo identificador', async () => {
+      const criado = await service.create({ nome: 'Maria' });
 
-      expect(service.getById(criado.id)).toEqual(criado);
+      await expect(service.getById(criado.id)).resolves.toEqual(criado);
     });
 
-    it('lança 404 quando não existe', () => {
-      expect(() => service.getById('inexistente')).toThrow(expect.objectContaining({ statusCode: 404 }));
+    it('lança 404 quando não existe', async () => {
+      await expect(service.getById('inexistente')).rejects.toMatchObject({ statusCode: 404 });
     });
   });
 
   describe('update', () => {
-    it('atualiza o nome do motorista', () => {
-      const { id } = service.create({ nome: 'Maria' });
+    it('atualiza o nome do motorista', async () => {
+      const { id } = await service.create({ nome: 'Maria' });
 
-      expect(service.update(id, { nome: 'Maria Souza' })).toEqual({ id, nome: 'Maria Souza' });
+      await expect(service.update(id, { nome: 'Maria Souza' })).resolves.toEqual({
+        id,
+        nome: 'Maria Souza',
+      });
     });
 
-    it('lança 404 quando não existe', () => {
-      expect(() => service.update('inexistente', { nome: 'X' })).toThrow(
-        expect.objectContaining({ statusCode: 404 }),
-      );
+    it('lança 404 quando não existe', async () => {
+      await expect(service.update('inexistente', { nome: 'X' })).rejects.toMatchObject({
+        statusCode: 404,
+      });
     });
 
-    it('rejeita nome inválido', () => {
-      const { id } = service.create({ nome: 'Maria' });
+    it('rejeita nome inválido', async () => {
+      const { id } = await service.create({ nome: 'Maria' });
 
-      expect(() => service.update(id, { nome: '' })).toThrow(expect.objectContaining({ statusCode: 400 }));
+      await expect(service.update(id, { nome: '' })).rejects.toMatchObject({ statusCode: 400 });
     });
   });
 
   describe('remove', () => {
-    it('exclui o motorista', () => {
-      const { id } = service.create({ nome: 'Maria' });
+    it('exclui o motorista', async () => {
+      const { id } = await service.create({ nome: 'Maria' });
 
-      service.remove(id);
+      await service.remove(id);
 
-      expect(() => service.getById(id)).toThrow(expect.objectContaining({ statusCode: 404 }));
+      await expect(service.getById(id)).rejects.toMatchObject({ statusCode: 404 });
     });
 
-    it('lança 404 quando não existe', () => {
-      expect(() => service.remove('inexistente')).toThrow(expect.objectContaining({ statusCode: 404 }));
+    it('lança 404 quando não existe', async () => {
+      await expect(service.remove('inexistente')).rejects.toMatchObject({ statusCode: 404 });
     });
 
-    it('não exclui motorista com utilizações registradas', () => {
-      const { id } = service.create({ nome: 'Maria' });
-      utilizacaoRepository.create({ motoristaId: id, automovelId: 'a1', dataFim: null });
+    it('não exclui motorista com utilizações registradas', async () => {
+      const { id } = await service.create({ nome: 'Maria' });
+      await utilizacaoRepository.create({ motoristaId: id, automovelId: 'a1', dataFim: null });
 
-      expect(() => service.remove(id)).toThrow(expect.objectContaining({ statusCode: 409 }));
+      await expect(service.remove(id)).rejects.toMatchObject({ statusCode: 409 });
     });
   });
 
   describe('list', () => {
-    beforeEach(() => {
-      service.create({ nome: 'João Silva' });
-      service.create({ nome: 'Joana Souza' });
-      service.create({ nome: 'Carlos Pereira' });
+    beforeEach(async () => {
+      await service.create({ nome: 'João Silva' });
+      await service.create({ nome: 'Joana Souza' });
+      await service.create({ nome: 'Carlos Pereira' });
     });
 
-    it('lista todos sem filtro', () => {
-      expect(service.list()).toHaveLength(3);
+    const nomes = (motoristas) => motoristas.map((m) => m.nome);
+
+    it('lista todos sem filtro', async () => {
+      await expect(service.list()).resolves.toHaveLength(3);
     });
 
-    it('filtra por parte do nome, ignorando caixa', () => {
-      expect(service.list({ nome: 'jo' }).map((m) => m.nome)).toEqual(['João Silva', 'Joana Souza']);
+    it('filtra por parte do nome, ignorando caixa', async () => {
+      expect(nomes(await service.list({ nome: 'jo' }))).toEqual(['João Silva', 'Joana Souza']);
     });
 
-    it('ignora acentos no filtro', () => {
-      expect(service.list({ nome: 'joao' }).map((m) => m.nome)).toEqual(['João Silva']);
+    it('ignora acentos no filtro', async () => {
+      expect(nomes(await service.list({ nome: 'joao' }))).toEqual(['João Silva']);
     });
 
-    it('retorna lista vazia quando nada corresponde', () => {
-      expect(service.list({ nome: 'zzz' })).toEqual([]);
+    it('retorna lista vazia quando nada corresponde', async () => {
+      await expect(service.list({ nome: 'zzz' })).resolves.toEqual([]);
     });
   });
 });

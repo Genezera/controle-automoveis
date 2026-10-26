@@ -9,19 +9,34 @@ describe('API', () => {
   });
 
   const criarAutomovel = async (dados = {}) =>
-    (await request(app).post('/automoveis').send({ placa: 'ABC1D23', cor: 'Preto', marca: 'Fiat', ...dados })).body;
+    (
+      await request(app)
+        .post('/automoveis')
+        .send({ placa: 'ABC1D23', cor: 'Preto', marca: 'Fiat', ...dados })
+    ).body;
 
-  const criarMotorista = async (nome = 'Ana') => (await request(app).post('/motoristas').send({ nome })).body;
+  const criarMotorista = async (nome = 'Ana') =>
+    (await request(app).post('/motoristas').send({ nome })).body;
+
+  const iniciarUtilizacao = (motorista, automovel, extra = {}) =>
+    request(app)
+      .post('/utilizacoes')
+      .send({ motoristaId: motorista.id, automovelId: automovel.id, motivo: 'Entrega', ...extra });
 
   describe('/automoveis', () => {
     it('executa o ciclo completo de cadastro', async () => {
-      const criado = await request(app).post('/automoveis').send({ placa: 'ABC1D23', cor: 'Preto', marca: 'Fiat' });
+      const criado = await request(app)
+        .post('/automoveis')
+        .send({ placa: 'ABC1D23', cor: 'Preto', marca: 'Fiat' });
       expect(criado.status).toBe(201);
 
       const { id } = criado.body;
+      expect(criado.headers.location).toBe(`/automoveis/${id}`);
       expect((await request(app).get(`/automoveis/${id}`)).body).toEqual(criado.body);
 
-      const atualizado = await request(app).put(`/automoveis/${id}`).send({ placa: 'ABC1D23', cor: 'Azul', marca: 'Fiat' });
+      const atualizado = await request(app)
+        .put(`/automoveis/${id}`)
+        .send({ placa: 'ABC1D23', cor: 'Azul', marca: 'Fiat' });
       expect(atualizado.status).toBe(200);
       expect(atualizado.body.cor).toBe('Azul');
 
@@ -44,10 +59,15 @@ describe('API', () => {
     });
 
     it('responde 400 com dados inválidos e 409 para placa duplicada', async () => {
-      expect((await request(app).post('/automoveis').send({ cor: 'Preto' })).status).toBe(400);
+      const invalido = await request(app).post('/automoveis').send({ cor: 'Preto' });
+      expect(invalido.status).toBe(400);
+      expect(invalido.body.erro).toMatch(/placa/);
 
       await criarAutomovel();
-      expect((await request(app).post('/automoveis').send({ placa: 'ABC1D23', cor: 'Azul', marca: 'Ford' })).status).toBe(409);
+      const duplicado = await request(app)
+        .post('/automoveis')
+        .send({ placa: 'ABC1D23', cor: 'Azul', marca: 'Ford' });
+      expect(duplicado.status).toBe(409);
     });
   });
 
@@ -57,6 +77,7 @@ describe('API', () => {
       expect(criado.status).toBe(201);
 
       const { id } = criado.body;
+      expect(criado.headers.location).toBe(`/motoristas/${id}`);
       expect((await request(app).get(`/motoristas/${id}`)).body).toEqual({ id, nome: 'Ana' });
 
       const atualizado = await request(app).put(`/motoristas/${id}`).send({ nome: 'Ana Maria' });
@@ -74,6 +95,10 @@ describe('API', () => {
 
       expect(resposta.body.map((m) => m.nome)).toEqual(['Maria Souza']);
     });
+
+    it('responde 400 quando a requisição não tem corpo', async () => {
+      expect((await request(app).post('/motoristas')).status).toBe(400);
+    });
   });
 
   describe('/utilizacoes', () => {
@@ -81,9 +106,7 @@ describe('API', () => {
       const automovel = await criarAutomovel();
       const motorista = await criarMotorista('Ana');
 
-      const iniciada = await request(app)
-        .post('/utilizacoes')
-        .send({ motoristaId: motorista.id, automovelId: automovel.id, motivo: 'Entrega' });
+      const iniciada = await iniciarUtilizacao(motorista, automovel);
       expect(iniciada.status).toBe(201);
       expect(iniciada.body.dataFim).toBeNull();
 
@@ -95,7 +118,7 @@ describe('API', () => {
         automovel: { placa: 'ABC1D23', cor: 'Preto', marca: 'Fiat' },
       });
 
-      const finalizada = await request(app).patch(`/utilizacoes/${iniciada.body.id}/finalizar`).send();
+      const finalizada = await request(app).patch(`/utilizacoes/${iniciada.body.id}/finalizar`);
       expect(finalizada.status).toBe(200);
       expect(finalizada.body.dataFim).not.toBeNull();
     });
@@ -106,31 +129,71 @@ describe('API', () => {
       const ana = await criarMotorista('Ana');
       const bruno = await criarMotorista('Bruno');
 
-      const usar = (motorista, automovel) =>
-        request(app).post('/utilizacoes').send({ motoristaId: motorista.id, automovelId: automovel.id, motivo: 'Reunião' });
+      expect((await iniciarUtilizacao(ana, carro1)).status).toBe(201);
+      expect((await iniciarUtilizacao(bruno, carro1)).status).toBe(409);
+      expect((await iniciarUtilizacao(ana, carro2)).status).toBe(409);
+    });
 
-      expect((await usar(ana, carro1)).status).toBe(201);
-      expect((await usar(bruno, carro1)).status).toBe(409);
-      expect((await usar(ana, carro2)).status).toBe(409);
+    it('impede utilização retroativa que se sobrepõe a uma já finalizada (409)', async () => {
+      const automovel = await criarAutomovel();
+      const ana = await criarMotorista('Ana');
+      const bruno = await criarMotorista('Bruno');
+
+      const anterior = await iniciarUtilizacao(ana, automovel, {
+        dataInicio: '2024-05-10T08:00:00Z',
+      });
+      await request(app)
+        .patch(`/utilizacoes/${anterior.body.id}/finalizar`)
+        .send({ dataFim: '2024-05-10T10:00:00Z' });
+
+      const sobreposta = await iniciarUtilizacao(bruno, automovel, {
+        dataInicio: '2024-05-10T09:00:00Z',
+      });
+      expect(sobreposta.status).toBe(409);
     });
 
     it('não exclui automóvel nem motorista com utilizações registradas', async () => {
       const automovel = await criarAutomovel();
       const motorista = await criarMotorista();
-      await request(app).post('/utilizacoes').send({ motoristaId: motorista.id, automovelId: automovel.id, motivo: 'Entrega' });
+      await iniciarUtilizacao(motorista, automovel);
 
       expect((await request(app).delete(`/automoveis/${automovel.id}`)).status).toBe(409);
       expect((await request(app).delete(`/motoristas/${motorista.id}`)).status).toBe(409);
     });
   });
 
-  describe('erros gerais', () => {
+  describe('infraestrutura', () => {
+    it('expõe um health check', async () => {
+      const resposta = await request(app).get('/health');
+
+      expect(resposta.status).toBe(200);
+      expect(resposta.body).toEqual({ status: 'ok' });
+    });
+
+    it('serve a especificação OpenAPI e o Swagger UI', async () => {
+      const spec = await request(app).get('/openapi.json');
+      expect(spec.status).toBe(200);
+      expect(Object.keys(spec.body.paths)).toEqual(
+        expect.arrayContaining(['/automoveis', '/motoristas', '/utilizacoes']),
+      );
+
+      expect((await request(app).get('/docs/')).status).toBe(200);
+      expect((await request(app).get('/')).headers.location).toBe('/docs');
+    });
+
+    it('não expõe o cabeçalho X-Powered-By', async () => {
+      expect((await request(app).get('/health')).headers['x-powered-by']).toBeUndefined();
+    });
+
     it('responde 404 para rotas desconhecidas', async () => {
       expect((await request(app).get('/nada')).status).toBe(404);
     });
 
     it('responde 400 para JSON malformado', async () => {
-      const resposta = await request(app).post('/motoristas').set('Content-Type', 'application/json').send('{ invalido');
+      const resposta = await request(app)
+        .post('/motoristas')
+        .set('Content-Type', 'application/json')
+        .send('{ invalido');
 
       expect(resposta.status).toBe(400);
     });
