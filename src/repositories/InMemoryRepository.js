@@ -3,8 +3,10 @@ const { randomUUID } = require('crypto');
 /**
  * Repositório genérico com persistência em memória.
  *
- * Os métodos são assíncronos de propósito: a interface é a mesma que um repositório
- * com banco de dados teria, então trocar a persistência não exige mudar os serviços.
+ * Os métodos são assíncronos de propósito e as consultas com filtro ficam em métodos
+ * nomeados das subclasses (ex.: `findByPlaca`), nunca em funções passadas pelos serviços.
+ * Assim a interface é a mesma que um repositório com banco de dados teria, e trocar a
+ * persistência não exige mudar os serviços.
  *
  * Armazena e devolve cópias dos objetos, evitando que quem consome o repositório
  * altere o estado interno por referência.
@@ -23,9 +25,8 @@ class InMemoryRepository {
     return entity ? { ...entity } : null;
   }
 
-  /** Retorna todos os registros, opcionalmente filtrados por um predicado. */
-  async findAll(predicate = () => true) {
-    return [...this.#items.values()].filter(predicate).map((entity) => ({ ...entity }));
+  async findAll() {
+    return [...this.#items.values()].map((entity) => ({ ...entity }));
   }
 
   /** Mescla `data` no registro existente. Retorna null se o id não existir. */

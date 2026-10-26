@@ -196,8 +196,9 @@ tests/
   persistência.
 - **Injeção de dependências.** Os serviços recebem os repositórios (e o relógio) pelo construtor, o que torna os
   testes determinísticos e isolados.
-- **Repositórios assíncronos.** A interface é a mesma que um repositório com banco teria, então trocar a
-  persistência em memória por um banco de dados não exige mudar serviços ou rotas.
+- **Repositórios assíncronos, com consultas nomeadas.** Os filtros ficam em métodos como `findByPlaca` e
+  `findByCorEMarca`, que um banco implementaria com SQL. Assim, trocar a persistência em memória por um banco
+  de dados não exige mudar serviços ou rotas.
 - **Express 5.** Erros lançados em handlers `async` chegam ao middleware de erros sem `try/catch` em cada rota.
 - **Convenção de nomes.** O vocabulário de domínio fica em português (automóvel, motorista, utilização), como no
   enunciado. Os termos técnicos (`create`, `findById`, `list`) ficam em inglês.

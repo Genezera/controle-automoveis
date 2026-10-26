@@ -1,5 +1,5 @@
 const { NotFoundError, ConflictError, ValidationError } = require('../errors');
-const { requireText, normalizeText } = require('../validators');
+const { requireText } = require('../validators');
 
 // Aceita o padrão antigo (ABC1234) e o Mercosul (ABC1D23).
 const PLACA_REGEX = /^[A-Z]{3}\d[A-Z0-9]\d{2}$/;
@@ -44,14 +44,9 @@ class AutomovelService {
     return automovel;
   }
 
-  /** Lista automóveis, filtrando opcionalmente por cor e/ou marca (igualdade, sem distinção de caixa ou acento). */
+  /** Lista automóveis, filtrando opcionalmente por cor e/ou marca. */
   async list({ cor, marca } = {}) {
-    const matches = (value, filter) =>
-      filter === undefined || normalizeText(value) === normalizeText(filter);
-
-    return this.automovelRepository.findAll(
-      (automovel) => matches(automovel.cor, cor) && matches(automovel.marca, marca),
-    );
+    return this.automovelRepository.findByCorEMarca({ cor, marca });
   }
 
   /**
