@@ -12,6 +12,7 @@ class UtilizacaoRepository extends InMemoryRepository {
     return this.findAll((u) => u.motoristaId === motoristaId && emAndamento(u))[0] || null;
   }
 
+  /** Considera qualquer utilização, finalizada ou não; usado para proteger o histórico na exclusão. */
   existsByAutomovel(automovelId) {
     return this.findAll((u) => u.automovelId === automovelId).length > 0;
   }

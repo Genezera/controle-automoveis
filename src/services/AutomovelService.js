@@ -16,6 +16,7 @@ class AutomovelService {
     return this.automovelRepository.create(data);
   }
 
+  /** Substitui todos os dados do automóvel (semântica de PUT): todos os campos são obrigatórios. */
   update(id, input) {
     this.getById(id);
     const data = this.#parse(input);
@@ -48,6 +49,11 @@ class AutomovelService {
     );
   }
 
+  /**
+   * Valida o corpo da requisição e devolve apenas os campos permitidos.
+   * A placa é normalizada antes da validação e da checagem de unicidade, para que
+   * "abc-1234" e "ABC1234" sejam tratadas como a mesma placa.
+   */
   #parse(input = {}) {
     const placa = requireText(input.placa, 'placa').replace(/[\s-]/g, '').toUpperCase();
     if (!PLACA_REGEX.test(placa)) {
@@ -60,6 +66,7 @@ class AutomovelService {
     };
   }
 
+  /** `idIgnorado` permite que o automóvel em atualização mantenha a própria placa. */
   #assertPlacaDisponivel(placa, idIgnorado) {
     const existente = this.automovelRepository.findByPlaca(placa);
     if (existente && existente.id !== idIgnorado) {

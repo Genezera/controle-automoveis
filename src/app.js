@@ -36,6 +36,7 @@ function createApp({ now } = {}) {
   app.use('/motoristas', motoristasRoutes(motoristaService));
   app.use('/utilizacoes', utilizacoesRoutes(utilizacaoService));
 
+  // A ordem importa: o 404 vem depois de todas as rotas e o handler de erros por último.
   app.use(notFoundHandler);
   app.use(errorHandler);
 

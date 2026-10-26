@@ -26,6 +26,7 @@ class UtilizacaoService {
     const motivo = requireText(input.motivo, 'motivo');
     const dataInicio = input.dataInicio === undefined ? this.now() : parseDate(input.dataInicio, 'dataInicio');
 
+    // Primeiro confirma que os dois existem (404); só então avalia os conflitos de uso (409).
     if (!this.motoristaRepository.findById(motoristaId)) throw new NotFoundError('Motorista');
     if (!this.automovelRepository.findById(automovelId)) throw new NotFoundError('Automóvel');
 
@@ -36,6 +37,7 @@ class UtilizacaoService {
       throw new ConflictError('O motorista já está utilizando outro automóvel');
     }
 
+    // `dataFim: null` marca a utilização como em andamento; é isso que bloqueia novos usos.
     const utilizacao = this.utilizacaoRepository.create({
       motoristaId,
       automovelId,
@@ -68,6 +70,10 @@ class UtilizacaoService {
     return this.utilizacaoRepository.findAll().map((u) => this.#withRelations(u));
   }
 
+  /**
+   * Monta a resposta substituindo os ids soltos pelos objetos relacionados:
+   * o motorista (id e nome) e o automóvel completo.
+   */
   #withRelations({ motoristaId, automovelId, ...utilizacao }) {
     const motorista = this.motoristaRepository.findById(motoristaId);
     const automovel = this.automovelRepository.findById(automovelId);

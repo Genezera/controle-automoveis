@@ -12,6 +12,7 @@ module.exports = function utilizacoesRoutes(utilizacaoService) {
     res.json(utilizacaoService.list());
   });
 
+  // PATCH, e não PUT: a requisição altera apenas um campo (dataFim) de um registro existente.
   router.patch('/:id/finalizar', (req, res) => {
     res.json(utilizacaoService.finalizar(req.params.id, req.body));
   });

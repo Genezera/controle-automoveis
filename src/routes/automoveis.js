@@ -21,6 +21,7 @@ module.exports = function automoveisRoutes(automovelService) {
     res.json(automovelService.update(req.params.id, req.body));
   });
 
+  // 204 No Content: a exclusão bem-sucedida não devolve corpo.
   router.delete('/:id', (req, res) => {
     automovelService.remove(req.params.id);
     res.status(204).end();
