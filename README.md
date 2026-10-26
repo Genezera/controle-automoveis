@@ -17,7 +17,7 @@ cadastro de automóveis, cadastro de motoristas e registro de utilização, com 
 
 ## Como executar
 
-Requisitos: **Node.js 20 ou superior**.
+Requisitos: **Node.js 20.19 ou superior**.
 
 ```bash
 npm install
